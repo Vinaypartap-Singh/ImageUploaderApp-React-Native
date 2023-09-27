@@ -50,7 +50,9 @@ export default function Uploading({ image, video, progress }) {
             useNativeControls
           />
         )}
-        <Text style={{ fontSize: 18, fontWeight: 500 }}>Uploading...</Text>
+        <Text style={{ fontSize: 18, fontWeight: 500 }}>
+          Uploading... {progress}% completed
+        </Text>
         <ProgressBar progress={progress} />
         <View
           style={{ width: "100%", borderWidth: 1, borderColor: "#00000010" }}
