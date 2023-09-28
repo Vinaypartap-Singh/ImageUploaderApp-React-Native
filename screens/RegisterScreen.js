@@ -4,16 +4,85 @@ import {
   SafeAreaView,
   TextInput,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import React, { useState } from "react";
 import { themeColor } from "../theme";
+import { auth, db } from "../firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { useNavigation } from "@react-navigation/native";
 
 export default function RegisterScreen() {
+  const navigation = useNavigation();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const registerUser = () => {};
+  const registerUser = () => {
+    if (username === "" || email === "" || password === "") {
+      Alert.alert(
+        "Invalid Details",
+        "Please fill all the details correctly.",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Ok",
+            style: "default",
+          },
+        ],
+        { cancelable: true }
+      );
+    } else {
+      createUserWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          // Signed in
+          const user = userCredential.user;
+          const uid = user.uid;
+
+          setDoc(doc(db, "users", `${uid}`), {
+            username: username,
+            email: email,
+            createdAt: new Date().toISOString(),
+          });
+
+          Alert.alert(
+            "Account Created",
+            "Your account has been created successfully. Login to Continue",
+            [
+              {
+                text: "Ok",
+                style: "default",
+              },
+              {
+                text: "Cancel",
+                style: "cancel",
+              },
+            ],
+            { cancelable: true }
+          );
+
+          navigation.replace("Login");
+          // ...
+        })
+        .catch((error) => {
+          Alert.alert("Error", error, [
+            {
+              text: "Ok",
+              style: "default",
+            },
+            {
+              text: "cancel",
+              style: "cancel",
+            },
+          ]);
+          // ..
+        });
+    }
+  };
 
   return (
     <SafeAreaView
@@ -88,7 +157,7 @@ export default function RegisterScreen() {
         </View>
 
         <TouchableOpacity
-          onPress={() => console.log(username, email, password)}
+          onPress={registerUser}
           style={{
             borderWidth: 1,
             marginTop: 20,
@@ -117,7 +186,7 @@ export default function RegisterScreen() {
           <Text style={{ fontWeight: 600, fontSize: 16 }}>
             Already have an account?{" "}
           </Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate("Login")}>
             <Text style={{ fontWeight: 600, fontSize: 16 }}>Login Now</Text>
           </TouchableOpacity>
         </View>
