@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Platform,
   ScrollView,
+  Linking,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import EmptyState from "../components/EmptyState";
@@ -177,6 +178,29 @@ export default function HomeScreen() {
     }
   };
 
+  const showFileDetails = (data) => {
+    Alert.alert(
+      "File Details",
+      `Click on the download button to download the file.`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Ok",
+          style: "default",
+        },
+        {
+          text: "Download File",
+          style: "destructive",
+          onPress: () => Linking.openURL(`${data.url}`),
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       {loading ? (
@@ -229,7 +253,10 @@ export default function HomeScreen() {
                   console.log("Mapped Data ", data);
                   if (data.fileType === "image") {
                     return (
-                      <TouchableOpacity key={data.url}>
+                      <TouchableOpacity
+                        key={data.url}
+                        onPress={() => showFileDetails(data)}
+                      >
                         <Image
                           key={index}
                           source={{ uri: data.url }}
@@ -249,7 +276,9 @@ export default function HomeScreen() {
                         rate={1.0}
                         volume={1.0}
                         useNativeControls
+                        shouldPlay
                         isLooping
+                        resizeMode="cover"
                         style={{
                           width: 100,
                           height: 100,
