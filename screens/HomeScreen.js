@@ -270,21 +270,25 @@ export default function HomeScreen() {
                     );
                   } else if (data.fileType === "video") {
                     return (
-                      <Video
+                      <TouchableOpacity
                         key={data.url}
-                        source={{ uri: data.url }}
-                        rate={1.0}
-                        volume={1.0}
-                        useNativeControls
-                        shouldPlay
-                        isLooping
-                        resizeMode="cover"
-                        style={{
-                          width: 100,
-                          height: 100,
-                          objectFit: "cover",
-                        }}
-                      />
+                        onPress={() => showFileDetails(data)}
+                      >
+                        <Video
+                          source={{ uri: data.url }}
+                          rate={1.0}
+                          volume={1.0}
+                          useNativeControls
+                          shouldPlay
+                          isLooping
+                          resizeMode="cover"
+                          style={{
+                            width: 100,
+                            height: 100,
+                            objectFit: "cover",
+                          }}
+                        />
+                      </TouchableOpacity>
                     );
                   }
                 })}
