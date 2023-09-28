@@ -15,33 +15,27 @@ import Uploading from "../components/Uploading";
 import { VideoCameraIcon, PhotoIcon } from "react-native-heroicons/outline";
 import * as ImagePicker from "expo-image-picker";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
-import { db, storage } from "../firebase";
-import {
-  addDoc,
-  collection,
-  doc,
-  onSnapshot,
-  setDoc,
-} from "firebase/firestore";
+import { auth, db, storage } from "../firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Video } from "expo-av";
 
 export default function HomeScreen() {
+  const currentUser = auth.currentUser.uid;
   const [image, setImage] = useState("");
   const [video, setVideo] = useState("");
   const [progress, setProgress] = useState(0);
   const [files, setFiles] = useState([]);
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "files"), (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === "added") {
-          console.log("New File Added", change.doc.data());
-          setFiles((prevFiles) => [...prevFiles, change.doc.data()]);
-        }
-      });
-    });
+    const getData = async () => {
+      const docRef = doc(db, "users", `${currentUser}`);
+      const docSnap = await getDoc(docRef);
 
-    return () => unsubscribe();
+      if (docSnap.exists()) {
+      }
+    };
+
+    getData();
   }, []);
 
   const pickImage = async () => {
@@ -54,6 +48,7 @@ export default function HomeScreen() {
 
     if (!result.canceled) {
       setImage(result.assets[0].uri);
+      const ImageDetails = result.assets[0];
       // Upload Image Function
       await uploadImage(result.assets[0].uri, "image");
     }
@@ -69,7 +64,6 @@ export default function HomeScreen() {
 
     if (!result.canceled) {
       setVideo(result.assets[0].uri);
-      // Upload Image Function
       await uploadImage(result.assets[0].uri, "video");
     }
   };
@@ -96,7 +90,12 @@ export default function HomeScreen() {
         getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
           console.log("File available at", downloadURL);
           // Save Data in Firebase
-          await saveRecord(fileType, downloadURL, new Date().toISOString());
+          await saveRecord(
+            fileType,
+            downloadURL,
+            new Date().toISOString(),
+            imageInfo
+          );
           setImage("");
           setVideo("");
         });
@@ -106,27 +105,56 @@ export default function HomeScreen() {
 
   const saveRecord = async (fileType, url, createdAt) => {
     try {
-      await addDoc(collection(db, "files"), {
-        fileType,
-        url,
-        createdAt,
-      });
+      const userDocRef = doc(db, "users", `${currentUser}`);
+      const userDoc = await getDoc(userDocRef);
 
-      Alert.alert(
-        "Document Saved",
-        "Your document has been saved successfully",
-        [
+      if (userDoc.exists()) {
+        const existingImageDetails = userDoc.data().ImageDetails || [];
+
+        existingImageDetails.push({ fileType, url, createdAt });
+
+        await setDoc(
+          userDocRef,
           {
-            text: "Cancel",
-            style: "cancel",
+            ImageDetails: existingImageDetails,
           },
-          {
-            text: "Ok",
-            style: "default",
-          },
-        ],
-        { cancelable: true }
-      );
+          { merge: true }
+        );
+
+        Alert.alert(
+          "Document Saved",
+          "Your document has been saved successfully",
+          [
+            {
+              text: "Cancel",
+              style: "cancel",
+            },
+            {
+              text: "Ok",
+              style: "default",
+            },
+          ],
+          { cancelable: true }
+        );
+      } else {
+        // Handle the case where the user document doesn't exist
+        console.error("User document does not exist");
+        Alert.alert(
+          "Error",
+          "An error occurred while saving the document. Please try again later.",
+          [
+            {
+              text: "Cancel",
+              style: "cancel",
+            },
+            {
+              text: "Ok",
+              style: "default",
+            },
+          ],
+          { cancelable: true }
+        );
+      }
     } catch (error) {
       console.error("Error saving record:", error); // Log the error for debugging
       Alert.alert(
