@@ -4,9 +4,10 @@ import {
   Image,
   TouchableOpacity,
   Alert,
-  FlatList,
   SafeAreaView,
   ActivityIndicator,
+  Platform,
+  ScrollView,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import EmptyState from "../components/EmptyState";
@@ -24,14 +25,19 @@ export default function HomeScreen() {
   const [image, setImage] = useState("");
   const [video, setVideo] = useState("");
   const [progress, setProgress] = useState(0);
-  const [files, setFiles] = useState([]);
+  const [files, setFiles] = useState();
+  const [loading, setLoading] = useState(false);
+  console.log(files);
 
   useEffect(() => {
+    setLoading(true);
     const getData = async () => {
       const docRef = doc(db, "users", `${currentUser}`);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
+        setFiles(docSnap.data().ImageDetails);
+        setLoading(false);
       }
     };
 
@@ -48,7 +54,8 @@ export default function HomeScreen() {
 
     if (!result.canceled) {
       setImage(result.assets[0].uri);
-      const ImageDetails = result.assets[0];
+      const fileSize = result.assets[0].fileSize;
+
       // Upload Image Function
       await uploadImage(result.assets[0].uri, "image");
     }
@@ -90,12 +97,7 @@ export default function HomeScreen() {
         getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
           console.log("File available at", downloadURL);
           // Save Data in Firebase
-          await saveRecord(
-            fileType,
-            downloadURL,
-            new Date().toISOString(),
-            imageInfo
-          );
+          await saveRecord(fileType, downloadURL, new Date().toISOString());
           setImage("");
           setVideo("");
         });
@@ -177,64 +179,102 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      {/* <ProgressBar progress={50} /> */}
-      {files.length > 0 ? (
-        <View
-          style={{
-            flexDirection: "row",
-            flexWrap: "wrap",
-            gap: 10,
-            justifyContent: "center",
-          }}
-        >
-          {files.map((data, index) => {
-            console.log(data);
-            if (data.fileType === "image") {
-              return (
-                <Image
-                  key={index}
-                  source={{ uri: data.url }}
-                  style={{ width: 100, height: 100, borderRadius: 10 }}
-                />
-              );
-            } else {
-              <Video
-                source={{ uri: data.url }}
-                rate={1.0}
-                volume={1.0}
-                useNativeControls
-                style={{ width: 100, height: 100 }}
-              />;
-            }
-          })}
-          {/* <FlatList
-          data={files}
-          keyExtractor={(item) => item.url}
-          renderItem={({ item }) => {
-            return (
-              <Image
-                source={{ uri: item.url }}
-                style={{ width: 100, height: 100 }}
-              />
-            );
-          }}
-        /> */}
-        </View>
-      ) : (
+      {loading ? (
         <View
           style={{
             flex: 1,
             alignItems: "center",
             justifyContent: "center",
             gap: 20,
+            paddingHorizontal: 30,
           }}
         >
-          <Text style={{ fontWeight: 600, fontSize: 18 }}>
-            Loading Files....
+          <Text
+            style={{
+              fontWeight: 600,
+              fontSize: 18,
+              textAlign: "center",
+            }}
+          >
+            After loading it may take some time to display your files....
           </Text>
           <ActivityIndicator size={"large"} color={"black"} />
         </View>
+      ) : (
+        <ScrollView style={{ paddingHorizontal: 30 }}>
+          {files ? (
+            <>
+              <View>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 600,
+                    textAlign: "center",
+                    marginTop: Platform.OS === "android" ? 50 : 20,
+                  }}
+                >
+                  Your Files
+                </Text>
+              </View>
+              <View
+                style={{
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  gap: 10,
+                  marginTop: 30,
+                  justifyContent: "space-evenly",
+                }}
+              >
+                {files.map((data, index) => {
+                  console.log("Mapped Data ", data);
+                  if (data.fileType === "image") {
+                    return (
+                      <TouchableOpacity key={data.url}>
+                        <Image
+                          key={index}
+                          source={{ uri: data.url }}
+                          style={{
+                            width: 100,
+                            height: 100,
+                            borderRadius: 10,
+                          }}
+                        />
+                      </TouchableOpacity>
+                    );
+                  } else if (data.fileType === "video") {
+                    return (
+                      <Video
+                        key={data.url}
+                        source={{ uri: data.url }}
+                        rate={1.0}
+                        volume={1.0}
+                        useNativeControls
+                        isLooping
+                        style={{
+                          width: 100,
+                          height: 100,
+                          objectFit: "cover",
+                        }}
+                      />
+                    );
+                  }
+                })}
+              </View>
+            </>
+          ) : (
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <EmptyState />
+            </View>
+          )}
+        </ScrollView>
       )}
+      {/* <ProgressBar progress={50} /> */}
 
       {image && <Uploading image={image} video={video} progress={progress} />}
       <View style={{ gap: 10, position: "absolute", bottom: 50, right: 30 }}>
