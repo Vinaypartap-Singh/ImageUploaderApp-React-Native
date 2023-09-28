@@ -1,4 +1,13 @@
-import { View, Text, Image, TouchableOpacity, Alert } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  Alert,
+  FlatList,
+  SafeAreaView,
+  ActivityIndicator,
+} from "react-native";
 import React, { useEffect, useState } from "react";
 import EmptyState from "../components/EmptyState";
 import ProgressBar from "../components/ProgressBar";
@@ -14,6 +23,7 @@ import {
   onSnapshot,
   setDoc,
 } from "firebase/firestore";
+import { Video } from "expo-av";
 
 export default function HomeScreen() {
   const [image, setImage] = useState("");
@@ -138,8 +148,66 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+    <SafeAreaView style={{ flex: 1 }}>
       {/* <ProgressBar progress={50} /> */}
+      {files.length > 0 ? (
+        <View
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: 10,
+            justifyContent: "center",
+          }}
+        >
+          {files.map((data, index) => {
+            console.log(data);
+            if (data.fileType === "image") {
+              return (
+                <Image
+                  key={index}
+                  source={{ uri: data.url }}
+                  style={{ width: 100, height: 100, borderRadius: 10 }}
+                />
+              );
+            } else {
+              <Video
+                source={{ uri: data.url }}
+                rate={1.0}
+                volume={1.0}
+                useNativeControls
+                style={{ width: 100, height: 100 }}
+              />;
+            }
+          })}
+          {/* <FlatList
+          data={files}
+          keyExtractor={(item) => item.url}
+          renderItem={({ item }) => {
+            return (
+              <Image
+                source={{ uri: item.url }}
+                style={{ width: 100, height: 100 }}
+              />
+            );
+          }}
+        /> */}
+        </View>
+      ) : (
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 20,
+          }}
+        >
+          <Text style={{ fontWeight: 600, fontSize: 18 }}>
+            Loading Files....
+          </Text>
+          <ActivityIndicator size={"large"} color={"black"} />
+        </View>
+      )}
+
       {image && <Uploading image={image} video={video} progress={progress} />}
       <View style={{ gap: 10, position: "absolute", bottom: 50, right: 30 }}>
         <TouchableOpacity
@@ -163,6 +231,6 @@ export default function HomeScreen() {
           <PhotoIcon color={"white"} />
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
