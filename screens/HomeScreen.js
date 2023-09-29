@@ -12,7 +12,6 @@ import {
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import EmptyState from "../components/EmptyState";
-import ProgressBar from "../components/ProgressBar";
 import Uploading from "../components/Uploading";
 import { VideoCameraIcon, PhotoIcon } from "react-native-heroicons/outline";
 import * as ImagePicker from "expo-image-picker";
@@ -333,15 +332,22 @@ export default function HomeScreen() {
               </View>
             </>
           ) : (
-            <View
-              style={{
-                flex: 1,
-                justifyContent: "center",
-                alignItems: "center",
-                marginTop: "50%",
-              }}
-            >
-              <EmptyState />
+            <View>
+              <View style={{ alignItems: "flex-end" }}>
+                <TouchableOpacity onPress={signOutUser}>
+                  <ArrowRightOnRectangleIcon color={themeColor.darkColor} />
+                </TouchableOpacity>
+              </View>
+              <View
+                style={{
+                  flex: 1,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  marginTop: "50%",
+                }}
+              >
+                <EmptyState />
+              </View>
             </View>
           )}
         </ScrollView>
@@ -349,6 +355,7 @@ export default function HomeScreen() {
       {/* <ProgressBar progress={50} /> */}
 
       {image && <Uploading image={image} video={video} progress={progress} />}
+      {video && <Uploading image={image} video={video} progress={progress} />}
       <View style={{ gap: 10, position: "absolute", bottom: 50, right: 30 }}>
         <TouchableOpacity
           onPress={pickVideo}
