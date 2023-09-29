@@ -20,6 +20,10 @@ import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { auth, db, storage } from "../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Video } from "expo-av";
+import { ArrowRightOnRectangleIcon } from "react-native-heroicons/outline";
+import { themeColor } from "../theme";
+import { signOut } from "firebase/auth";
+import { useNavigation } from "@react-navigation/native";
 
 export default function HomeScreen() {
   const currentUser = auth.currentUser.uid;
@@ -28,7 +32,7 @@ export default function HomeScreen() {
   const [progress, setProgress] = useState(0);
   const [files, setFiles] = useState();
   const [loading, setLoading] = useState(false);
-  console.log(files);
+  const navigation = useNavigation();
 
   useEffect(() => {
     setLoading(true);
@@ -201,8 +205,32 @@ export default function HomeScreen() {
     );
   };
 
+  const signOutUser = () => {
+    signOut(auth)
+      .then(() => {
+        navigation.replace("Login");
+      })
+      .catch((error) => {
+        Alert.alert(
+          "Error",
+          error,
+          [
+            {
+              text: "Cancel",
+              style: "cancel",
+            },
+            {
+              text: "Ok",
+              style: "default",
+            },
+          ],
+          { cancelable: true }
+        );
+      });
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
       {loading ? (
         <View
           style={{
@@ -220,7 +248,8 @@ export default function HomeScreen() {
               textAlign: "center",
             }}
           >
-            After loading it may take some time to display your files....
+            After loading it may take some time to display your files depending
+            on your internet speed....
           </Text>
           <ActivityIndicator size={"large"} color={"black"} />
         </View>
@@ -228,7 +257,13 @@ export default function HomeScreen() {
         <ScrollView style={{ paddingHorizontal: 30 }}>
           {files ? (
             <>
-              <View>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
                 <Text
                   style={{
                     fontSize: 18,
@@ -239,6 +274,9 @@ export default function HomeScreen() {
                 >
                   Your Files
                 </Text>
+                <TouchableOpacity onPress={signOutUser}>
+                  <ArrowRightOnRectangleIcon color={themeColor.darkColor} />
+                </TouchableOpacity>
               </View>
               <View
                 style={{
@@ -300,6 +338,7 @@ export default function HomeScreen() {
                 flex: 1,
                 justifyContent: "center",
                 alignItems: "center",
+                marginTop: "50%",
               }}
             >
               <EmptyState />
